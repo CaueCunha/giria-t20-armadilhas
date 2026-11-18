@@ -60,12 +60,13 @@ test("modelos do Livro Básico e dos suplementos: perícia, CD, dano, condição
     if (!(m.encontrar > 0 && m.desarmar > 0)) p.push(`${id}: faltam as CDs de encontrar/desarmar`);
     if (!["evita", "metade", "", undefined].includes(m.sucesso)) p.push(`${id}: sucesso ${m.sucesso}`);
   }
+  for (const [id, m] of Object.entries(MODELOS_LIVRO)) if (m.livro !== "T20" || m.fonte !== "Tormenta20, p. 317–318") p.push(`${id}: livro/fonte`);
   assert.deepEqual(p, []);
   assert.equal(Object.keys(MODELOS_LIVRO).length, 23, "as 23 armadilhas das p. 317–318");
   assert.equal(Object.keys(MODELOS_SUPLEMENTOS).length, 22, "Ameaças de Arton: 3 vivas (p. 19), 7 kobolds (p. 178–179), 12 novos perigos (p. 358–359)");
   for (const [id, m] of Object.entries(MODELOS_SUPLEMENTOS)) {
     assert.ok(id in MODELOS_LIVRO === false, `${id} repete um id do Livro Básico`);
-    assert.match(m.fonte, /^Ameaças de Arton, p\. \d+$/, id);
+    assert.equal(m.fonte, `Ameaças de Arton, p. ${m.pagina}`, id);
     assert.equal(m.livro, "AdA", id);
   }
 });
@@ -260,9 +261,15 @@ test("outros módulos acrescentam modelos (aparecem na lista do formulário)", (
   registrarModelos({ "teste-extra": { nome: "Armadilha Extra", pericia: "fort", cd: 15, dano: "1d6[frio]", sucesso: "metade" } });
   const Tipo = CONFIG.RegionBehavior.dataModels["giria-t20-armadilhas.armadilha"];
   const escolhas = Tipo.defineSchema().modelo.choices();
-  assert.match(escolhas["teste-extra"], /Armadilha Extra/);
-  assert.match(escolhas["fosso-camuflado"], /Fosso Camuflado \(ND 1\/4\)/);
-  assert.equal(escolhas["mina-terrestre"], "Mina Terrestre (ND 5) · AdA");
+  assert.deepEqual(escolhas["teste-extra"], { label: "Armadilha Extra", group: "Outros módulos" });
+  assert.deepEqual(escolhas["fosso-camuflado"], { label: "Fosso Camuflado (ND 1/4)", group: "LB - Armadilhas" });
+  assert.deepEqual(escolhas["mina-terrestre"], { label: "Mina Terrestre (ND 5) · AdA", group: "AdA - Armadilhas" });
+  // grupos na ordem dos livros do Giria (LB, ..., AdA) e, dentro de cada um, por ND
+  const ids = Object.keys(escolhas).slice(1);
+  const grupos = [...new Set(ids.map((id) => escolhas[id].group))];
+  assert.deepEqual(grupos, ["LB - Armadilhas", "AdA - Armadilhas", "Outros módulos"]);
+  const ada = ids.filter((id) => escolhas[id].group === "AdA - Armadilhas");
+  assert.deepEqual([ada[0], ada.at(-1)], ["andrajos-flamejantes", "sussurro-de-sszzaas"]);
   assert.ok(modelos()["teste-extra"]);
   const cond = Tipo.defineSchema().condicao.choices();
   assert.ok(cond.abalado && cond[""] === "Nenhuma");

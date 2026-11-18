@@ -15,7 +15,7 @@
 // do módulo; o mestre cria o aviso. Nenhuma informação da armadilha aparece para os jogadores antes do disparo.
 import { MODULO, TIPO, souMestreAtivo } from "./constantes.mjs";
 import { pedir, acoes, rolarDano, nomePericia } from "./testes.mjs";
-import { modelos, modelo } from "./modelos.mjs";
+import { modelo, escolhasModelos } from "./modelos.mjs";
 
 const SOCKET = `module.${MODULO}`;
 const PERICIAS = { refl: "Reflexos", fort: "Fortitude", vont: "Vontade", "": "Sem teste (só dano)" };
@@ -59,7 +59,7 @@ export function criarTipo() {
         events: this._createEventsField({ events: eventos, initial: eventos.slice(0, 1) }),
         modelo: new F.StringField({ required: true, blank: true, initial: "", label: "Modelo",
           hint: "Escolha uma armadilha pronta. Em \"Personalizada\", valem os campos abaixo.",
-          choices: () => ({ "": "Personalizada (campos abaixo)", ...Object.fromEntries(Object.entries(modelos()).map(([id, m]) => [id, `${m.nome}${m.nd ? ` (ND ${m.nd})` : ""}${m.livro ? ` · ${m.livro}` : ""}`])) }) }),
+          choices: () => ({ "": "Personalizada (campos abaixo)", ...escolhasModelos() }) }),
         nome: new F.StringField({ required: true, blank: true, initial: "", label: "Nome no card", hint: "Opcional: troca o nome mostrado (vale também com modelo)." }),
         texto: new F.StringField({ required: true, blank: true, initial: "", label: "Descrição para os jogadores" }),
         pericia: new F.StringField({ required: true, blank: true, initial: "refl", choices: PERICIAS, label: "Teste de resistência" }),
