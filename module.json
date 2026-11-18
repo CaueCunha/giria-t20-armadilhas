@@ -2,7 +2,7 @@
   "id": "giria-t20-armadilhas",
   "title": "Giria T20 - Armadilhas",
   "description": "Armadilhas de Tormenta20 que disparam quando um token entra numa região do mapa: o mestre recebe um aviso, clica em Disparar e os jogadores rolam a resistência pelo chat. Traz as armadilhas do Livro Básico e de Ameaças de Arton.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "authors": [{ "name": "Cauê" }],
   "compatibility": { "minimum": "13", "verified": "14" },
   "relationships": {

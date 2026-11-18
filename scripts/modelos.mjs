@@ -3,7 +3,8 @@
 // outros módulos acrescentam os seus com api.registrarModelos({ id: modelo }) no hook "setup" (o Duelo de Dragões faz isso).
 //
 // Campos de um modelo (todos opcionais, menos nome):
-//   nome, fonte (livro e página), livro (sigla mostrada na lista: "AdA"), texto (HTML curto que vai no card dos jogadores), nd, magica (true = Dissipar Magia anula)
+//   nome, livro (sigla do Giria T20: "T20", "AdA"...) e pagina, como flags.giria-t20.fonte; fonte (texto do aviso, gerado
+//   de livro e pagina quando falta); texto (HTML curto que vai no card dos jogadores), nd, magica (true = Dissipar Magia anula)
 //   pericia: "refl" | "fort" | "vont" | "" (sem teste: só o botão de dano para o mestre)
 //   cd, dano (fórmula com tipo: "2d6[impacto]"), sucesso: "evita" | "metade" | "" (passar não muda o dano)
 //   condicao: id da condição oferecida ao mestre em quem falhar ("abalado")
@@ -13,6 +14,8 @@
 //   area: true = afeta todos os tokens dentro da região quando dispara; false = só quem entrou
 //   ativadorSemTeste: true = quem entrou não tem direito ao teste (Runa de Proteção)
 //   encontrar, desarmar: CDs de Investigação e Ladinagem (só o mestre vê)
+
+import { LIVROS, grupoDoLivro, textoFonte, valorNd } from "./livros.mjs";
 
 const efeitoPenalidade = (nome, valor, img) => ({
   name: nome, img, type: "base", transfer: false, disabled: false,
@@ -50,10 +53,10 @@ export const MODELOS_LIVRO = {
   "abismo-da-morte": { nome: "Abismo da Morte", nd: "8", area: true, pericia: "refl", cd: 30, sucesso: "evita", dano: "20d6[impacto] + 2d8+10[perfuracao]", texto: "Um quadrado de 6 m de lado se abre numa queda de 30 m sobre estacas.", falhaTexto: "cai no abismo (Atletismo CD 25 para escalar)", encontrar: 30, desarmar: 30 },
   "simbolo-da-morte": { nome: "Símbolo da Morte", nd: "8", magica: true, area: true, pericia: "fort", cd: 30, danoSePassar: "10d6[trevas]", texto: "Criaturas em alcance curto são reduzidas a –1 PV. Quem passa sofre só 10d6 de trevas.", falhaTexto: "reduzido a –1 PV (o mestre ajusta os PV na ficha)", encontrar: 30, desarmar: 30 },
 };
-for (const m of Object.values(MODELOS_LIVRO)) m.fonte ??= "Tormenta20, p. 317–318";
+for (const m of Object.values(MODELOS_LIVRO)) Object.assign(m, { livro: "T20", pagina: "317–318" });
 
 // Suplementos. Resumo mecânico próprio; o texto completo está no livro, na página indicada.
-const ADA = (pagina, m) => ({ ...m, livro: "AdA", fonte: `Ameaças de Arton, p. ${pagina}` });
+const ADA = (pagina, m) => ({ ...m, livro: "AdA", pagina: String(pagina) });
 export const MODELOS_SUPLEMENTOS = {
   // Armadilhas vivas (p. 19): criaturas fixas da Tormenta; reativam sozinhas depois de 1d6 minutos.
   "estatua-executora-viva": ADA(19, { nome: "Estátua Executora Viva", nd: "4", pericia: "refl", cd: 27, sucesso: "evita", dano: "1d12+12[corte]", texto: "Armadilha viva que golpeia duas vezes: cada teste evita um golpe. Clique em Disparar de novo para o segundo golpe. Reativa sozinha depois de 1d6 minutos.", encontrar: 25, desarmar: 25 }),
@@ -84,9 +87,23 @@ export const MODELOS_SUPLEMENTOS = {
   "sussurro-de-sszzaas": ADA(359, { nome: "Sussurro de Sszzaas", nd: "13", magica: true, pericia: "vont", cd: 30, sucesso: "evita", texto: "Encantamento: uma criatura em alcance curto vê todos como inimigos e só faz ações hostis contra os aliados. Repete o teste no fim de cada rodada; se passar, o efeito acaba.", falhaTexto: "ataca os aliados (refaz Vontade no fim de cada rodada)", encontrar: 30, desarmar: 30 }),
 };
 
+// Fonte do aviso a partir de livro e página (os modelos de outros módulos podem trazer a sua).
+for (const m of [...Object.values(MODELOS_LIVRO), ...Object.values(MODELOS_SUPLEMENTOS)]) m.fonte ??= textoFonte(m.livro, m.pagina);
+
 const extras = {};
 export function registrarModelos(novos = {}) {
   for (const [id, m] of Object.entries(novos)) if (m?.nome) extras[id] = m;
 }
 export const modelos = () => ({ ...MODELOS_LIVRO, ...MODELOS_SUPLEMENTOS, ...extras });
 export const modelo = (id) => modelos()[id] ?? null;
+
+// Lista do formulário agrupada por livro, como as pastas do Giria T20 ("LB - Armadilhas", "AdA - Armadilhas"),
+// na ordem dos livros e, dentro de cada um, por ND. Modelos sem livro conhecido vão para "Outros módulos".
+export function escolhasModelos() {
+  const ordemLivro = (m) => { const i = LIVROS.findIndex((l) => l.fonte === m.livro); return i < 0 ? LIVROS.length : i; };
+  const lista = Object.entries(modelos()).map(([id, m], i) => ({ id, m, i }));
+  lista.sort((a, b) => ordemLivro(a.m) - ordemLivro(b.m) || valorNd(a.m.nd) - valorNd(b.m.nd) || a.i - b.i);
+  // A sigla fica também no rótulo dos suplementos, para a lista continuar clara se o Foundry não mostrar os grupos.
+  const rotulo = (m) => `${m.nome}${m.nd ? ` (ND ${m.nd})` : ""}${m.livro && m.livro !== "T20" ? ` · ${m.livro}` : ""}`;
+  return Object.fromEntries(lista.map(({ id, m }) => [id, { label: rotulo(m), group: grupoDoLivro(m.livro) }]));
+}

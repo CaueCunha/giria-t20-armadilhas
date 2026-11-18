@@ -14,7 +14,7 @@ Depois ative o módulo no mundo, em **Game Settings › Manage Modules**.
 
 1. Na cena, abra **Regions** nos Scene Controls e desenhe a área da armadilha com **Rectangle** ou **Polygon** (o corredor, a porta, o baú).
 2. Dê dois cliques na região e, na aba **Behaviors**, clique em **+** e escolha **Armadilha (Tormenta20)**.
-3. Escolha um **Modelo** (as 23 armadilhas do Livro Básico, p. 317–318, as 22 de Ameaças de Arton, marcadas com "· AdA" na lista, e as que outros módulos acrescentarem) ou deixe em **Personalizada** e preencha teste, CD, dano, quem passa, condição e as CDs de encontrar e desarmar.
+3. Escolha um **Modelo** (as 23 armadilhas do Livro Básico, p. 317–318, as 22 de Ameaças de Arton e as que outros módulos acrescentarem). A lista é agrupada por livro como as pastas do Giria T20 ("LB - Armadilhas", "AdA - Armadilhas", "Outros módulos") e, em cada grupo, ordenada por ND) ou deixe em **Personalizada** e preencha teste, CD, dano, quem passa, condição e as CDs de encontrar e desarmar.
 4. Opções: **Dispara uma vez** (ligado), **Só tokens de jogadores ativam** (ligado), **Parar o token na borda** (ligado) e **Pausar o jogo ao ativar** (desligado). Em **Events**, o padrão é **Token Move In**.
 
 Na mesa:
@@ -54,7 +54,7 @@ Hooks.once("setup", () => {
 });
 ```
 
-Campos aceitos: veja o cabeçalho de `scripts/modelos.mjs`.
+Campos aceitos: veja o cabeçalho de `scripts/modelos.mjs`. Para cair no grupo de um livro, use `livro` com a sigla do Giria T20 (`T20`, `HdA`, `DdA`, `AdA`, `BdA`, `AtA`, `GdM`...) e `pagina`; a fonte do aviso é montada a partir deles.
 
 ## Testes
 
