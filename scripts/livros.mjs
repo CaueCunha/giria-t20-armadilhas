@@ -10,6 +10,8 @@ export const LIVROS = [
   { fonte: "GdM", nome: "Guia de Deuses Menores", rotulo: "GdM" },
   { fonte: "GdN", nome: "Guia de NPCs", rotulo: "GdN" },
   { fonte: "FdT", nome: "Fim dos Tempos", rotulo: "FdT" },
+  // Campanha Duelo de Dragões (Revista Tormenta20 #1–20): não é sigla do Giria T20; a fonte de cada modelo diz a revista.
+  { fonte: "DdD", nome: "Duelo de Dragões", rotulo: "DdD" },
   { fonte: "CASA", nome: "Regras da Casa", rotulo: "Casa" },
 ];
 export const livroPorFonte = (sigla) => LIVROS.find((l) => l.fonte === sigla) ?? null;
