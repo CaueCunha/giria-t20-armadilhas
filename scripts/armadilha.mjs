@@ -14,7 +14,7 @@
 // O evento da região chega no cliente de quem moveu o token. Esse cliente avisa o mestre ativo pelo socket
 // do módulo; o mestre cria o aviso. Nenhuma informação da armadilha aparece para os jogadores antes do disparo.
 import { MODULO, TIPO, souMestreAtivo } from "./constantes.mjs";
-import { pedir, acoes, rolarDano, nomePericia } from "./testes.mjs";
+import { pedir, acoes, rolarDano, nomePericia, ESTILO_BOTAO, linhaBotoes } from "./testes.mjs";
 import { modelo, escolhasModelos } from "./modelos.mjs";
 
 const SOCKET = `module.${MODULO}`;
@@ -40,7 +40,6 @@ export function configDe(sys) {
 export function resumoRegra(c) {
   const partes = [];
   if (c.pericia) partes.push(`${PERICIAS[c.pericia] ?? nomePericia(c.pericia)} CD ${c.cd}${c.sucesso === "evita" ? " evita" : c.sucesso === "metade" ? " reduz à metade" : ""}`);
-  if (c.dano) partes.push(`dano ${c.dano}`);
   if (c.danoSePassar) partes.push(`quem passa sofre ${c.danoSePassar}`);
   if (c.condicao) partes.push(`falha: ${nomeCondicao(c.condicao)}`);
   else if (c.efeito) partes.push(`falha: ${c.efeito.name}`);
@@ -123,7 +122,7 @@ async function avisar({ behavior, token }) {
   return msg;
 }
 
-const botao = (acao, rotulo, icone) => `<button type="button" class="gta-armadilha" data-acao="${acao}" style="width:auto;line-height:1.4;padding:0 6px;margin:2px 0"><i class="fas ${icone}"></i> ${esc(rotulo)}</button>`;
+const botao = (acao, rotulo, icone) => `<button type="button" class="gta-armadilha" data-acao="${acao}" style="${ESTILO_BOTAO}"><i class="fas ${icone}"></i> ${esc(rotulo)}</button>`;
 
 export function renderAviso(a) {
   const c = a.cfg;
@@ -131,8 +130,9 @@ export function renderAviso(a) {
   const detectar = [c.encontrar ? `Encontrar: Investigação CD ${c.encontrar}` : "", c.desarmar ? `Desarmar: Ladinagem CD ${c.desarmar}` : "", c.nd ? `ND ${c.nd}` : "", c.magica ? "mágica (Dissipar Magia anula)" : ""].filter(Boolean).join(" · ");
   let botoes;
   if (a.ignorado) botoes = `<p><i>Ignorada: a armadilha continua armada.</i></p>`;
-  else if (!a.disparos) botoes = `<p>${botao("disparar", "Disparar", "fa-bolt")} ${botao("ignorar", "Ignorar", "fa-xmark")}</p>`;
-  else botoes = `<p><i>Disparada${a.disparos > 1 ? ` ${a.disparos} vezes` : ""}.${a.desligada ? " A região foi desligada." : ""}</i></p><p>${botao("disparar", "Disparar de novo", "fa-bolt")}${a.desligada ? ` ${botao("rearmar", "Rearmar", "fa-rotate-left")}` : ""}</p>`;
+  else if (!a.disparos) botoes = linhaBotoes([botao("disparar", "Disparar", "fa-bolt"), botao("ignorar", "Ignorar", "fa-xmark")]);
+  else botoes = `<p><i>Disparada${a.disparos > 1 ? ` ${a.disparos} vezes` : ""}.${a.desligada ? " A região foi desligada." : ""}</i></p>`
+    + linhaBotoes([botao("disparar", "Disparar de novo", "fa-bolt"), a.desligada ? botao("rearmar", "Rearmar", "fa-rotate-left") : ""]);
   return `<div class="gta-aviso tormenta20 item-card"><h3>⚠ Armadilha: ${esc(c.nome)}</h3>`
     + `<p>${nomes} ${a.tokens.length > 1 ? "entraram" : "entrou"} na área.</p>`
     + `<p>${esc(resumoRegra(c))}</p>`
@@ -186,8 +186,8 @@ export async function disparar(msg) {
 async function cardDireto(c, tokens, roll, comCondicao) {
   const A = acoes();
   const linhas = tokens.map((t) => {
-    const bts = [roll ? A.dano(t, roll, 1) : "", comCondicao && c.condicao ? A.status(t, c.condicao) : "", comCondicao && c.efeito ? A.efeito(t, c.efeito, `Aplicar ${c.efeito.name}`) : ""].filter(Boolean).join(" ");
-    return `<li style="margin:4px 0"><b>${esc(t.name)}</b>${comCondicao ? "" : " (sem direito a teste)"} ${bts}</li>`;
+    const bts = [roll ? A.dano(t, roll, 1) : "", comCondicao && c.condicao ? A.status(t, c.condicao) : "", comCondicao && c.efeito ? A.efeito(t, c.efeito, `Aplicar ${c.efeito.name}`) : ""];
+    return `<li style="margin:4px 0"><b>${esc(t.name)}</b>${comCondicao ? "" : " (sem direito a teste)"}${linhaBotoes(bts)}</li>`;
   });
   const rolagem = roll ? `<div class="roll roll--dano" data-roll-title="${esc(c.nome)}">${await roll.render()}</div>` : "";
   return A.enviar({ speaker: { alias: c.nome }, content: `<div class="gta-pedido tormenta20 item-card"><h3>${esc(c.nome)}</h3>${c.texto ? `<p>${c.texto}</p>` : ""}${rolagem}<ul style="list-style:none;padding-left:0">${linhas.join("")}</ul></div>` });
@@ -199,7 +199,7 @@ async function danoDosQuePassaram(c, res) {
   if (!passaram.length) return;
   const roll = await rolarDano(c.danoSePassar, c.nome);
   const A = acoes();
-  const linhas = passaram.map((r) => `<li style="margin:4px 0"><b>${esc(r.nome)}</b> ${A.dano(r.ator, roll, 1)}</li>`).join("");
+  const linhas = passaram.map((r) => `<li style="margin:4px 0"><b>${esc(r.nome)}</b>${linhaBotoes([A.dano(r.ator, roll, 1)])}</li>`).join("");
   return A.enviar({ speaker: { alias: c.nome }, content: `<div class="gta-pedido tormenta20 item-card"><h3>${esc(c.nome)}: quem passou</h3><div class="roll roll--dano" data-roll-title="${esc(c.nome)}">${await roll.render()}</div><ul style="list-style:none;padding-left:0">${linhas}</ul></div>` });
 }
 
