@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { REF, validarEfeito, formulaValida } from "./lib/ref.mjs";
 import { criarMundo } from "./lib/mock.mjs";
-import { MODELOS_LIVRO, registrarModelos, modelos } from "../scripts/modelos.mjs";
+import { MODELOS_LIVRO, MODELOS_SUPLEMENTOS, registrarModelos, modelos } from "../scripts/modelos.mjs";
 import { registrarTipo, configDe, _teste as A } from "../scripts/armadilha.mjs";
 import { _teste as T } from "../scripts/testes.mjs";
 
@@ -41,14 +41,15 @@ test("module.json: id, tipo de comportamento declarado, socket e scripts que exi
   for (const s of m.esmodules) assert.ok(fs.existsSync(new URL(`../${s}`, import.meta.url)), s);
 });
 
-test("modelos do Livro Básico: perícia, CD, dano, condição e efeito existem no sistema", () => {
+test("modelos do Livro Básico e dos suplementos: perícia, CD, dano, condição e efeito existem no sistema", () => {
   const p = [];
-  for (const [id, m] of Object.entries(MODELOS_LIVRO)) {
+  for (const [id, m] of Object.entries({ ...MODELOS_LIVRO, ...MODELOS_SUPLEMENTOS })) {
     if (!m.nome || !m.texto || !m.fonte) p.push(`${id}: falta nome, texto ou fonte`);
     if (!["", "refl", "fort", "vont"].includes(m.pericia ?? "")) p.push(`${id}: perícia ${m.pericia}`);
     if (m.pericia && !(m.cd > 0)) p.push(`${id}: sem CD`);
     if (m.pericia && !REF.pericias.includes(m.pericia)) p.push(`${id}: perícia não existe no sistema`);
-    if (!m.pericia && !m.dano) p.push(`${id}: sem teste e sem dano não faz nada`);
+    if (!m.pericia && !m.dano && !m.condicao && !m.efeito) p.push(`${id}: sem teste, dano nem condição não faz nada`);
+    if (!/^(1\/[24]|\d+)$/.test(m.nd ?? "")) p.push(`${id}: ND ${m.nd}`);
     for (const f of [m.dano, m.danoSePassar].filter(Boolean)) {
       if (!formulaValida(f.replace(/\s+/g, ""))) p.push(`${id}: fórmula ${f}`);
       for (const [, t] of f.matchAll(/\[([^\]]+)\]/g)) if (!REF.tiposDano.includes(t)) p.push(`${id}: tipo de dano ${t}`);
@@ -61,6 +62,24 @@ test("modelos do Livro Básico: perícia, CD, dano, condição e efeito existem 
   }
   assert.deepEqual(p, []);
   assert.equal(Object.keys(MODELOS_LIVRO).length, 23, "as 23 armadilhas das p. 317–318");
+  assert.equal(Object.keys(MODELOS_SUPLEMENTOS).length, 22, "Ameaças de Arton: 3 vivas (p. 19), 7 kobolds (p. 178–179), 12 novos perigos (p. 358–359)");
+  for (const [id, m] of Object.entries(MODELOS_SUPLEMENTOS)) {
+    assert.ok(id in MODELOS_LIVRO === false, `${id} repete um id do Livro Básico`);
+    assert.match(m.fonte, /^Ameaças de Arton, p\. \d+$/, id);
+    assert.equal(m.livro, "AdA", id);
+  }
+});
+
+test("conferência com Ameaças de Arton: alguns valores", () => {
+  const v = (id) => MODELOS_SUPLEMENTOS[id];
+  assert.deepEqual([v("andrajos-flamejantes").cd, v("andrajos-flamejantes").sucesso, v("andrajos-flamejantes").condicao, v("andrajos-flamejantes").encontrar, v("andrajos-flamejantes").desarmar], [17, "metade", "emchamas", 15, 20]);
+  assert.deepEqual([v("virote-ardido").nd, v("virote-ardido").dano], ["1", "2d6[perfuracao] + 2d6[acido]"]);
+  assert.deepEqual([v("mina-terrestre").cd, v("mina-terrestre").dano, v("mina-terrestre").area], [25, "12d6[impacto]", true]);
+  assert.deepEqual([v("runa-de-desintegracao").pericia, v("runa-de-desintegracao").cd, v("runa-de-desintegracao").danoSePassar, v("runa-de-desintegracao").nd], ["fort", 30, "2d12[essencia]", "10"]);
+  // armadilha viva = +2 na CD, +2 de dano por dado, +5 em Investigação/Ladinagem, ND +1 (p. 19)
+  const base = MODELOS_LIVRO["parede-instavel"], viva = v("parede-instavel-viva");
+  assert.deepEqual([viva.cd, viva.encontrar, viva.desarmar, viva.dano], [base.cd + 2, base.encontrar + 5, base.desarmar + 5, "8d6+16[impacto]"]);
+  assert.equal(v("estatua-de-gorgona").condicao, "petrificado");
 });
 
 test("conferência com o livro (p. 317–318): alguns valores", () => {
@@ -243,7 +262,40 @@ test("outros módulos acrescentam modelos (aparecem na lista do formulário)", (
   const escolhas = Tipo.defineSchema().modelo.choices();
   assert.match(escolhas["teste-extra"], /Armadilha Extra/);
   assert.match(escolhas["fosso-camuflado"], /Fosso Camuflado \(ND 1\/4\)/);
+  assert.equal(escolhas["mina-terrestre"], "Mina Terrestre (ND 5) · AdA");
   assert.ok(modelos()["teste-extra"]);
   const cond = Tipo.defineSchema().condicao.choices();
   assert.ok(cond.abalado && cond[""] === "Nenhuma");
+});
+
+test("Runa de Desintegração: quem falha sofre 10d12; quem passa sofre só 2d12", async () => {
+  const M = mundo({ modoDados: "max" });
+  const b = M.regiao({ modelo: "runa-de-desintegracao" });
+  await M.entrar(b, M.token("Styx"), M.gm);
+  await A.disparar(avisos(M)[0]);
+  await jogadoresRolam(M); // 25 < 30: falha
+  await mestreAplica(M);
+  assert.deepEqual(M.herois[0].danos, [120]);
+  const M2 = mundo({ modoDados: "max" });
+  const b2 = M2.regiao({ modelo: "runa-de-desintegracao" });
+  const forte = M2.herois[0];
+  forte.rollPericia = async () => new Roll("1d20 + 15").evaluate();
+  await M2.entrar(b2, M2.token("Styx"), M2.gm);
+  await A.disparar(avisos(M2)[0]);
+  await jogadoresRolam(M2);
+  await espera(); await espera();
+  await mestreAplica(M2);
+  assert.deepEqual(forte.danos, [24], "só os 2d12 de quem passou");
+  assert.deepEqual([...M.problemas, ...M2.problemas], []);
+});
+
+test("Armadilha de Gaiola: sem teste, o mestre aplica imóvel em quem entrou", async () => {
+  const M = mundo();
+  const b = M.regiao({ modelo: "armadilha-de-gaiola" });
+  await M.entrar(b, M.token("Styx"), M.gm);
+  await A.disparar(avisos(M)[0]);
+  assert.equal(M.chat.filter((m) => m.flags?.[MOD]?.pedido).length, 0);
+  await mestreAplica(M);
+  assert.ok(M.herois[0].statuses.has("imovel"), "imóvel aplicado");
+  assert.deepEqual(M.problemas, []);
 });

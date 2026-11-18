@@ -14,7 +14,7 @@ Depois ative o módulo no mundo, em **Game Settings › Manage Modules**.
 
 1. Na cena, abra **Regions** nos Scene Controls e desenhe a área da armadilha com **Rectangle** ou **Polygon** (o corredor, a porta, o baú).
 2. Dê dois cliques na região e, na aba **Behaviors**, clique em **+** e escolha **Armadilha (Tormenta20)**.
-3. Escolha um **Modelo** (as 23 armadilhas do Livro Básico, p. 317–318, e as que outros módulos acrescentarem) ou deixe em **Personalizada** e preencha teste, CD, dano, quem passa, condição e as CDs de encontrar e desarmar.
+3. Escolha um **Modelo** (as 23 armadilhas do Livro Básico, p. 317–318, as 22 de Ameaças de Arton, marcadas com "· AdA" na lista, e as que outros módulos acrescentarem) ou deixe em **Personalizada** e preencha teste, CD, dano, quem passa, condição e as CDs de encontrar e desarmar.
 4. Opções: **Dispara uma vez** (ligado), **Só tokens de jogadores ativam** (ligado), **Parar o token na borda** (ligado) e **Pausar o jogo ao ativar** (desligado). Em **Events**, o padrão é **Token Move In**.
 
 Na mesa:
@@ -24,6 +24,18 @@ Na mesa:
 - Armadilhas de área (símbolos, desabamentos) testam todos os tokens que estão dentro da região na hora do disparo.
 - **Ignorar** fecha o aviso e mantém a armadilha armada (o grupo achou e contornou, por exemplo).
 - Com **Dispara uma vez**, a região se desliga depois do disparo, e o aviso ganha o botão **Rearmar**. **Disparar de novo** serve para armadilhas que repetem a cada rodada (Gás Venenoso) ou golpeiam duas vezes (Estátua Executora).
+
+## Armadilhas dos suplementos
+
+Os modelos de suplementos trazem só um resumo mecânico; o texto completo está no livro, na página que aparece no aviso.
+
+| Livro | Páginas | Armadilhas |
+|---|---|---|
+| Ameaças de Arton | 19 | Armadilhas vivas: Estátua Executora Viva (ND 4), Gás Venenoso Vivo (ND 4), Parede Instável Viva (ND 5) |
+| Ameaças de Arton | 178–179 | Kobolds: Andrajos Flamejantes, Sinos Alarmantes, Geringonça Retardante (ND 1/4), Barril de Bugulentos, Besunte Galinificador (ND 1/2), Tronco de Árvore, Virote Ardido (ND 1) |
+| Ameaças de Arton | 358–359 | Armadilha de Gaiola (ND 1/2), Runa de Aceleração (ND 1), Gás Pútrido, Piso Eletrificado (ND 2), Jato de Chamas (ND 3), Extrato de Oxxdon, Mina Terrestre, Runa de Teletransporte, Símbolo da Anulação (ND 5), Estátua de Górgona (ND 9), Runa de Desintegração (ND 10), Sussurro de Sszzaas (ND 13) |
+
+Os outros suplementos não trazem armadilhas de cenário com ficha. As armadilhas do Armadilheiro Mestre (Heróis de Arton, p. 117), o Cubo Armadilha (Deuses de Arton, p. 56) e a Armadilha Animada do Aspecto de Hyninn (Bestiário de Arton, p. 28) são poderes de personagem, item ou criatura, com CD do usuário.
 
 ## O que fica com o mestre
 

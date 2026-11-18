@@ -59,7 +59,7 @@ export function criarTipo() {
         events: this._createEventsField({ events: eventos, initial: eventos.slice(0, 1) }),
         modelo: new F.StringField({ required: true, blank: true, initial: "", label: "Modelo",
           hint: "Escolha uma armadilha pronta. Em \"Personalizada\", valem os campos abaixo.",
-          choices: () => ({ "": "Personalizada (campos abaixo)", ...Object.fromEntries(Object.entries(modelos()).map(([id, m]) => [id, `${m.nome}${m.nd ? ` (ND ${m.nd})` : ""}`])) }) }),
+          choices: () => ({ "": "Personalizada (campos abaixo)", ...Object.fromEntries(Object.entries(modelos()).map(([id, m]) => [id, `${m.nome}${m.nd ? ` (ND ${m.nd})` : ""}${m.livro ? ` · ${m.livro}` : ""}`])) }) }),
         nome: new F.StringField({ required: true, blank: true, initial: "", label: "Nome no card", hint: "Opcional: troca o nome mostrado (vale também com modelo)." }),
         texto: new F.StringField({ required: true, blank: true, initial: "", label: "Descrição para os jogadores" }),
         pericia: new F.StringField({ required: true, blank: true, initial: "refl", choices: PERICIAS, label: "Teste de resistência" }),

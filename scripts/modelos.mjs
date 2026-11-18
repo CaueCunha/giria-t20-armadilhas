@@ -1,8 +1,9 @@
-// Modelos de armadilha. Os do Livro Básico (Tormenta20 Jogo do Ano, p. 317–318) vêm com o módulo;
+// Modelos de armadilha. Os do Livro Básico (Tormenta20 Jogo do Ano, p. 317–318) e os dos suplementos
+// (MODELOS_SUPLEMENTOS, com resumo mecânico próprio e a página) vêm com o módulo;
 // outros módulos acrescentam os seus com api.registrarModelos({ id: modelo }) no hook "setup" (o Duelo de Dragões faz isso).
 //
 // Campos de um modelo (todos opcionais, menos nome):
-//   nome, fonte (livro e página), texto (HTML curto que vai no card dos jogadores), nd, magica (true = Dissipar Magia anula)
+//   nome, fonte (livro e página), livro (sigla mostrada na lista: "AdA"), texto (HTML curto que vai no card dos jogadores), nd, magica (true = Dissipar Magia anula)
 //   pericia: "refl" | "fort" | "vont" | "" (sem teste: só o botão de dano para o mestre)
 //   cd, dano (fórmula com tipo: "2d6[impacto]"), sucesso: "evita" | "metade" | "" (passar não muda o dano)
 //   condicao: id da condição oferecida ao mestre em quem falhar ("abalado")
@@ -51,9 +52,41 @@ export const MODELOS_LIVRO = {
 };
 for (const m of Object.values(MODELOS_LIVRO)) m.fonte ??= "Tormenta20, p. 317–318";
 
+// Suplementos. Resumo mecânico próprio; o texto completo está no livro, na página indicada.
+const ADA = (pagina, m) => ({ ...m, livro: "AdA", fonte: `Ameaças de Arton, p. ${pagina}` });
+export const MODELOS_SUPLEMENTOS = {
+  // Armadilhas vivas (p. 19): criaturas fixas da Tormenta; reativam sozinhas depois de 1d6 minutos.
+  "estatua-executora-viva": ADA(19, { nome: "Estátua Executora Viva", nd: "4", pericia: "refl", cd: 27, sucesso: "evita", dano: "1d12+12[corte]", texto: "Armadilha viva que golpeia duas vezes: cada teste evita um golpe. Clique em Disparar de novo para o segundo golpe. Reativa sozinha depois de 1d6 minutos.", encontrar: 25, desarmar: 25 }),
+  "gas-venenoso-vivo": ADA(19, { nome: "Gás Venenoso Vivo", nd: "4", pericia: "fort", cd: 22, sucesso: "metade", dano: "1d12+2[perda]", texto: "Armadilha viva: perde 1d12+2 PV por veneno por rodada durante 2d4 rodadas. Clique em Disparar de novo a cada rodada. Reativa sozinha depois de 1d6 minutos.", encontrar: 30, desarmar: 30 }),
+  "parede-instavel-viva": ADA(19, { nome: "Parede Instável Viva", nd: "5", area: true, pericia: "refl", cd: 27, sucesso: "metade", dano: "8d6+16[impacto]", texto: "Armadilha viva: a parede desaba num quadrado de 3 m. Reativa sozinha depois de 1d6 minutos.", encontrar: 25, desarmar: 25 }),
+
+  // Armadilhas kobolds (p. 178–179).
+  "andrajos-flamejantes": ADA(178, { nome: "Andrajos Flamejantes", nd: "1/4", area: true, pericia: "refl", cd: 17, sucesso: "metade", dano: "2d6[fogo]", condicao: "emchamas", texto: "Trapos com combustível pegam fogo num raio de 3 m. Passar reduz o dano à metade e evita ficar em chamas.", falhaTexto: "fica em chamas", encontrar: 15, desarmar: 20 }),
+  "sinos-alarmantes": ADA(178, { nome: "Sinos Alarmantes", nd: "1/4", pericia: "refl", cd: 15, sucesso: "evita", texto: "Um barbante escondido faz soar um alarme.", falhaTexto: "o alarme soa: kobolds em alcance longo não podem ser surpreendidos até o fim da cena", encontrar: 15, desarmar: 15 }),
+  "geringonca-retardante": ADA(178, { nome: "Geringonça Retardante", nd: "1/4", area: true, pericia: "refl", cd: 17, sucesso: "evita", condicao: "enredado", texto: "Lama pegajosa cai sobre quem está num raio de 3 m.", falhaTexto: "enredado até tirar a lama (1 minuto)", encontrar: 17, desarmar: 20 }),
+  "barril-de-bugulentos": ADA(178, { nome: "Barril de Bugulentos", nd: "1/2", pericia: "refl", cd: 20, sucesso: "evita", dano: "1d12[perda]", texto: "Insetos venenosos caem sobre a vítima: perde 1d12 PV por veneno agora e no início de cada turno dela, até se livrar (ação completa e Destreza CD 10; ficar em chamas também resolve).", falhaTexto: "coberto de bugulentos: perde 1d12 PV no início de cada turno", encontrar: 20, desarmar: 20 }),
+  "besunte-galinificador": ADA(178, { nome: "Besunte Galinificador", nd: "1/2", pericia: "refl", cd: 20, sucesso: "evita", texto: "Um barril de gosma com penas de galinha vira sobre a vítima.", falhaTexto: "coberto de penas: kobolds recebem +2 em perícias e dano contra ele (1 minuto para limpar, ou fogo)", encontrar: 20, desarmar: 20 }),
+  "tronco-de-arvore": ADA(178, { nome: "Tronco de Árvore", nd: "1", area: true, pericia: "refl", cd: 20, sucesso: "metade", dano: "4d6[impacto]", condicao: "caido", texto: "Um tronco desce como aríete numa linha de 6 m. Passar reduz o dano à metade e evita a queda.", falhaTexto: "fica caído", encontrar: 20, desarmar: 20 }),
+  "virote-ardido": ADA(179, { nome: "Virote Ardido", nd: "1", pericia: "refl", cd: 25, sucesso: "evita", dano: "2d6[perfuracao] + 2d6[acido]", texto: "Um virote com pasta corrosiva atinge um personagem.", encontrar: 25, desarmar: 20 }),
+
+  // Novos perigos: armadilhas (p. 358–359).
+  "armadilha-de-gaiola": ADA(358, { nome: "Armadilha de Gaiola", nd: "1/2", pericia: "", condicao: "imovel", texto: "Grades de ferro fecham um quadrado de 1,5 m com a vítima dentro. Abrir: Força ou Ladinagem CD 25; quebrar: grades com RD 10 e 60 PV.", encontrar: 20, desarmar: 25 }),
+  "runa-de-aceleracao": ADA(358, { nome: "Runa de Aceleração", nd: "1", magica: true, pericia: "fort", cd: 20, texto: "A vítima é arremessada na direção em que andava. Se bater numa parede ou objeto, sofre 1d6 de impacto a cada 1,5 m percorrido (o mestre rola).", falhaTexto: "arremessada 9 m", sucessoTexto: "arremessada só 4,5 m", encontrar: 20, desarmar: 20 }),
+  "gas-putrido": ADA(358, { nome: "Gás Pútrido", nd: "2", area: true, pericia: "fort", cd: 20, condicao: "enjoado", texto: "Criaturas em alcance curto ficam enjoadas. Quem passa fica enjoado só por 1d4 rodadas (o mestre aplica).", falhaTexto: "enjoado por uma cena", sucessoTexto: "enjoado por 1d4 rodadas", encontrar: 25, desarmar: 25 }),
+  "piso-eletrificado": ADA(358, { nome: "Piso Eletrificado", nd: "2", area: true, pericia: "fort", cd: 20, sucesso: "metade", dano: "6d6[eletricidade]", texto: "O piso dá choque num quadrado de 3 m. Quem está molhado ou de armadura de metal sofre –5 no teste.", encontrar: 25, desarmar: 20 }),
+  "jato-de-chamas": ADA(358, { nome: "Jato de Chamas", nd: "3", area: true, pericia: "refl", cd: 25, sucesso: "metade", dano: "6d6[fogo]", condicao: "emchamas", texto: "Uma labareda cobre uma linha de 6 m. Passar reduz o dano à metade e evita ficar em chamas.", falhaTexto: "fica em chamas", encontrar: 25, desarmar: 25 }),
+  "extrato-de-oxxdon": ADA(358, { nome: "Extrato de Oxxdon", nd: "5", area: true, pericia: "refl", cd: 25, sucesso: "evita", texto: "Uma nuvem de 3 m de raio oxida metal. Construtos de metal perdem 4d12 PV e ficam exaustos até serem reparados (Fortitude CD 25: metade e fatigado; o mestre rola).", falhaTexto: "itens de metal são destruídos", encontrar: 20, desarmar: 20 }),
+  "mina-terrestre": ADA(358, { nome: "Mina Terrestre", nd: "5", area: true, pericia: "refl", cd: 25, sucesso: "evita", dano: "12d6[impacto]", texto: "Uma explosão numa esfera de 3 m.", encontrar: 25, desarmar: 25 }),
+  "runa-de-teletransporte": ADA(358, { nome: "Runa de Teletransporte", nd: "5", magica: true, pericia: "vont", cd: 20, sucesso: "evita", texto: "Uma criatura a até 3 m é levada para um ponto em alcance médio, quase sempre uma cela ou outra armadilha.", falhaTexto: "teleportada (o mestre move o token)", encontrar: 25, desarmar: 20 }),
+  "simbolo-da-anulacao": ADA(358, { nome: "Símbolo da Anulação", nd: "5", magica: true, area: true, pericia: "vont", cd: 25, sucesso: "evita", texto: "Magias em alcance curto são dissipadas e itens mágicos ficam mundanos por 1d6 rodadas.", falhaTexto: "magias dissipadas e itens mágicos mundanos por 1d6 rodadas", encontrar: 25, desarmar: 20 }),
+  "estatua-de-gorgona": ADA(359, { nome: "Estátua de Górgona", nd: "9", area: true, pericia: "refl", cd: 25, sucesso: "evita", condicao: "petrificado", texto: "Criaturas num cone de 9 m à frente da estátua viram pedra.", falhaTexto: "petrificado", encontrar: 25, desarmar: 25 }),
+  "runa-de-desintegracao": ADA(359, { nome: "Runa de Desintegração", nd: "10", magica: true, pericia: "fort", cd: 30, sucesso: "evita", dano: "10d12[essencia]", danoSePassar: "2d12[essencia]", texto: "Uma criatura em alcance curto sofre 10d12 de essência; quem passa sofre só 2d12. Quem chega a 0 PV ou menos vira pó.", sucessoTexto: "sofre só 2d12 (botão no cartão seguinte)", encontrar: 30, desarmar: 30 }),
+  "sussurro-de-sszzaas": ADA(359, { nome: "Sussurro de Sszzaas", nd: "13", magica: true, pericia: "vont", cd: 30, sucesso: "evita", texto: "Encantamento: uma criatura em alcance curto vê todos como inimigos e só faz ações hostis contra os aliados. Repete o teste no fim de cada rodada; se passar, o efeito acaba.", falhaTexto: "ataca os aliados (refaz Vontade no fim de cada rodada)", encontrar: 30, desarmar: 30 }),
+};
+
 const extras = {};
 export function registrarModelos(novos = {}) {
   for (const [id, m] of Object.entries(novos)) if (m?.nome) extras[id] = m;
 }
-export const modelos = () => ({ ...MODELOS_LIVRO, ...extras });
+export const modelos = () => ({ ...MODELOS_LIVRO, ...MODELOS_SUPLEMENTOS, ...extras });
 export const modelo = (id) => modelos()[id] ?? null;

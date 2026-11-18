@@ -6,11 +6,11 @@
 import { MODULO } from "./constantes.mjs";
 import { registrarTipo, ligarArmadilhas, receberGatilho, disparar, configDe } from "./armadilha.mjs";
 import { ligarTestes, api as apiTestes } from "./testes.mjs";
-import { registrarModelos, modelos, MODELOS_LIVRO } from "./modelos.mjs";
+import { registrarModelos, modelos, MODELOS_LIVRO, MODELOS_SUPLEMENTOS } from "./modelos.mjs";
 
 Hooks.once("init", () => {
   registrarTipo();
-  game.modules.get(MODULO).api = { testes: apiTestes, registrarModelos, modelos, modelosLivro: MODELOS_LIVRO, receberGatilho, disparar, configDe };
+  game.modules.get(MODULO).api = { testes: apiTestes, registrarModelos, modelos, modelosLivro: MODELOS_LIVRO, modelosSuplementos: MODELOS_SUPLEMENTOS, receberGatilho, disparar, configDe };
 });
 
 Hooks.once("ready", () => {
