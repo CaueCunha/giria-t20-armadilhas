@@ -107,7 +107,8 @@ test("token de jogador entra: para na borda, o mestre recebe um aviso só para e
   assert.deepEqual(av.whisper, ["gm"], "sussurro só para o mestre");
   assert.match(av.texto, /Armadilha: Fosso Camuflado/);
   assert.match(av.texto, /Styx entrou na área/);
-  assert.match(av.texto, /Reflexos CD 20 evita · dano 2d6\[impacto\]/);
+  assert.match(av.texto, /Reflexos CD 20 evita/);
+  assert.doesNotMatch(av.texto, /2d6/, "o dano só aparece na rolagem, depois do disparo");
   assert.match(av.texto, /Encontrar: Investigação CD 20 · Desarmar: Ladinagem CD 20 · ND 1\/4/);
   assert.match(av.content, /data-acao="disparar"/);
   assert.match(av.content, /data-acao="ignorar"/);
@@ -342,4 +343,18 @@ test("Bugulentos! (campanha): quem falha recebe o botão do efeito de dano cont�
   assert.deepEqual(M.herois[0].danos, [1]);
   assert.equal(M.herois[0].efeitos[0].system.changes[0].key, "danoContinuo");
   assert.deepEqual(M.problemas, []);
+});
+
+test("botões lado a lado e sem a fórmula do dano repetida no cartão dos jogadores", async () => {
+  const M = mundo({ modoDados: "max" });
+  const b = M.regiao({ modelo: "fosso-camuflado" });
+  await M.entrar(b, M.token("Styx"), M.gm);
+  const av = avisos(M)[0];
+  assert.match(av.content, /<div class="gta-botoes" style="display:flex[^"]*">.*Disparar.*Ignorar.*<\/div>/s);
+  await A.disparar(av);
+  const pedido = M.chat.find((m) => m.flags?.[MOD]?.pedido);
+  assert.doesNotMatch(pedido.content, /<b>Dano:<\/b>/);
+  assert.match(pedido.content, /Passar no teste evita o dano/);
+  assert.equal((pedido.content.match(/class="gta-botoes"/g) ?? []).length, 1, "a linha de botões de quem entrou");
+  assert.match(avisos(M)[0].content, /class="gta-botoes".*Disparar de novo.*Rearmar/s);
 });

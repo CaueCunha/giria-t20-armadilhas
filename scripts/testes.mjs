@@ -49,6 +49,13 @@ export async function rolarDano(formula, titulo = "Dano") {
   return r;
 }
 
+// Botões lado a lado: o chat do Foundry estica cada <button> na largura toda; numa linha flex eles ficam do tamanho do texto.
+export const ESTILO_BOTAO = "flex:0 0 auto;width:auto;line-height:1.4;padding:0 6px;margin:0";
+export const linhaBotoes = (lista) => {
+  const b = lista.filter(Boolean);
+  return b.length ? `<div class="gta-botoes" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:4px 0">${b.join("")}</div>` : "";
+};
+
 // ---------------- Ações do mestre (botões de aplicar) ----------------
 function rotuloAcao(a) {
   if (a.rotulo) return a.rotulo;
@@ -60,7 +67,7 @@ function rotuloAcao(a) {
 }
 const botaoAcao = (a, i) => a.feito
   ? `<span class="gta-feito">✔ ${esc(rotuloAcao(a))}</span>`
-  : `<button type="button" class="gta-acao gta-mestre" data-acao="${i}" style="width:auto;line-height:1.4;padding:0 6px;margin:2px 0">${esc(rotuloAcao(a))}</button>`;
+  : `<button type="button" class="gta-acao gta-mestre" data-acao="${i}" style="${ESTILO_BOTAO}">${esc(rotuloAcao(a))}</button>`;
 
 function novaAcao(tipo, ator, extra) {
   const a = { tipo, ator: uuidDe(ator), nome: (ator?.actor ?? ator)?.name ?? "", feito: false, ...extra };
@@ -125,17 +132,18 @@ async function renderPedido(p, acoesLista = []) {
     const alvo = `<b>${esc(ln.nome)}</b>${ln.rotulo ? ` (${esc(ln.rotulo)})` : ""}`;
     const bon = ln.bonus ? ` ${ln.bonus > 0 ? "+" : ""}${ln.bonus}` : "";
     if (!ln.feito) {
-      const botoes = ln.pericias.map((pe) => `<button type="button" class="gta-rolar" data-linha="${l}" data-pericia="${pe}" style="width:auto;line-height:1.4;padding:0 6px;margin:2px 0">`
-        + `<i class="fas fa-dice-d20"></i> ${esc(nomePericia(pe))}${bon}</button>`).join(" ");
-      return `<li style="margin:4px 0">${alvo}: ${ln.cd == null ? "teste oposto" : `CD ${ln.cd}`} ${botoes}</li>`;
+      const botoes = ln.pericias.map((pe) => `<button type="button" class="gta-rolar" data-linha="${l}" data-pericia="${pe}" style="${ESTILO_BOTAO}">`
+        + `<i class="fas fa-dice-d20"></i> ${esc(nomePericia(pe))}${bon}</button>`);
+      return `<li style="margin:4px 0">${alvo}: ${ln.cd == null ? "teste oposto" : `CD ${ln.cd}`}${linhaBotoes(botoes)}</li>`;
     }
     const res = ln.cd == null ? "" : ln.passou ? `: <span style="color:#1b6b1b">✔ passou</span>` : `: <span style="color:#9b1c1c">✘ falhou</span>`;
-    const minhas = acoesLista.map((a, i) => [a, i]).filter(([a]) => a.linha === l).map(([a, i]) => botaoAcao(a, i)).join(" ");
+    const minhas = linhaBotoes(acoesLista.map((a, i) => [a, i]).filter(([a]) => a.linha === l).map(([a, i]) => botaoAcao(a, i)));
     const refazer = p.fechado ? "" : ` <a class="gta-refazer gta-mestre" data-linha="${l}" title="Mestre: deixar rolar de novo">↻</a>`;
     return `<li style="margin:4px 0">${alvo}: ${esc(nomePericia(ln.pericia))} <b>${ln.total}</b>${bon ? ` (com${bon})` : ""}${ln.cd == null ? "" : ` contra CD ${ln.cd}`}${res}${ln.cd == null ? "" : textoDano(p, ln)}`
-      + `${ln.cd == null ? "" : ln.passou ? (p.sucessoTexto ? ` · ${esc(p.sucessoTexto)}` : "") : (p.falha?.texto ? ` · ${esc(p.falha.texto)}` : "")}${refazer}${minhas ? `<br>${minhas}` : ""}</li>`;
+      + `${ln.cd == null ? "" : ln.passou ? (p.sucessoTexto ? ` · ${esc(p.sucessoTexto)}` : "") : (p.falha?.texto ? ` · ${esc(p.falha.texto)}` : "")}${refazer}${minhas}</li>`;
   });
-  const regra = p.dano ? `<p><b>Dano:</b> ${esc(p.dano.formula)}${p.sucesso === "metade" ? " (passar reduz à metade)" : p.sucesso === "evita" ? " (passar evita)" : ""}</p>` : "";
+  // A fórmula e o total já aparecem na rolagem logo abaixo; aqui fica só o que o teste faz com o dano.
+  const regra = p.dano && p.sucesso ? `<p><i>${p.sucesso === "metade" ? "Passar no teste reduz o dano à metade." : "Passar no teste evita o dano."}</i></p>` : "";
   return `<div class="gta-pedido tormenta20 item-card">${p.titulo ? `<h3>${esc(p.titulo)}</h3>` : ""}${p.texto ? `<p>${p.texto}</p>` : ""}${regra}`
     + (p.danoHtml ? `<div class="roll roll--dano" data-roll-title="${esc(p.dano.titulo)}">${p.danoHtml}</div>` : "")
     + `<ul style="list-style:none;padding-left:0">${linhas.join("")}</ul>`
