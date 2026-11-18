@@ -87,14 +87,38 @@ export const MODELOS_SUPLEMENTOS = {
   "sussurro-de-sszzaas": ADA(359, { nome: "Sussurro de Sszzaas", nd: "13", magica: true, pericia: "vont", cd: 30, sucesso: "evita", texto: "Encantamento: uma criatura em alcance curto vê todos como inimigos e só faz ações hostis contra os aliados. Repete o teste no fim de cada rodada; se passar, o efeito acaba.", falhaTexto: "ataca os aliados (refaz Vontade no fim de cada rodada)", encontrar: 30, desarmar: 30 }),
 };
 
+// Campanha Duelo de Dragões (Revista Tormenta20). Os ids começam com "ddd-", os mesmos que o módulo Duelo de Dragões
+// 0.21.3 registrava; agora vêm daqui, no grupo "DdD - Armadilhas". O Símbolo da Morte das revistas 9 e 13 é o do Livro Básico.
+const DDD = (revista, m) => ({ ...m, livro: "DdD", fonte: `Duelo de Dragões #${revista}` });
+const danoContinuo = (nome, formula) => ({
+  name: nome, img: "icons/svg/hazard.svg", type: "base", transfer: false, disabled: false,
+  duration: { value: null, units: "seconds", expiry: null }, statuses: [], description: "",
+  system: {
+    changes: [{ key: "danoContinuo", value: formula, type: "custom", priority: null, phase: "initial" }],
+    targets: [], status: null, onuse: false,
+    abilityUse: { description: "", automatic: false, aumenta: false, custo: 0, names: [], types: [] },
+    aura: { isAura: false, range: 0 },
+  },
+});
+export const MODELOS_CAMPANHA = {
+  "ddd-fosso-uivantes": DDD(2, { nome: "Fosso nas Uivantes", nd: "1/4", pericia: "refl", cd: 15, sucesso: "evita", dano: "1d6[impacto]", texto: "A neve esconde um fosso.", falhaTexto: "cai no fosso" }),
+  "ddd-bugulentos": DDD(3, { nome: "Bugulentos!", nd: "1/2", pericia: "refl", cd: 20, sucesso: "evita", dano: "1d12[perda]", efeito: danoContinuo("Bugulentos", "1d12[perda]"), texto: "Um fio derruba um barril de insetos venenosos do teto.", falhaTexto: "coberto de bugulentos: perde 1d12 PV no início de cada turno até se livrar (ação completa e Destreza CD 10) ou ficar em chamas", encontrar: 20, desarmar: 20 }),
+  "ddd-fogo-fatuo": DDD(12, { nome: "Fogo-fátuo", nd: "6", magica: true, area: true, pericia: "vont", cd: 25, sucesso: "metade", dano: "7d6[psiquico]", condicao: "atordoado", texto: "Luzes dançam sobre a lama e as runas tomam a mente (dano psíquico não letal). Repete a cada rodada: clique em Disparar de novo. Cada sucesso dá uma rodada de lucidez para agir.", falhaTexto: "atordoado", encontrar: 30, desarmar: 30 }),
+  "ddd-queda-da-escada": DDD(13, { nome: "Escada Quebrada", nd: "", pericia: "atle", cd: 25, sucesso: "evita", dano: "10d6[impacto]", texto: "A escada do túnel de 30 m está quebrada. Cada um testa também Percepção CD 25: só cai quem falhar nos dois testes.", falhaTexto: "cai, se também falhou em Percepção CD 25" }),
+  "ddd-sussurro-de-sszzaas": DDD(13, { nome: "Sussurro de Sszzaas (túnel)", nd: "13", magica: true, area: true, pericia: "vont", cd: 30, sucesso: "evita", texto: "Criaturas em alcance curto ouvem o sussurro do Grande Corruptor. Repete no fim de cada turno e não se desativa ao disparar (Ladinagem ou Dissipar Magia).", falhaTexto: "vê todos como inimigos e gasta suas ações contra os aliados", encontrar: 30, desarmar: 30 }),
+  "ddd-maldicao-do-dragao-rei": DDD(19, { nome: "Maldição do Dragão-Rei", nd: "16", magica: true, area: true, pericia: "fort", cd: 45, sucesso: "metade", dano: "10d12[trevas]", condicao: "alquebrado", texto: "As runas sob o musgo despertam em todas as criaturas em alcance curto.", falhaTexto: "alquebrado", encontrar: 40, desarmar: 40 }),
+};
+
 // Fonte do aviso a partir de livro e página (os modelos de outros módulos podem trazer a sua).
 for (const m of [...Object.values(MODELOS_LIVRO), ...Object.values(MODELOS_SUPLEMENTOS)]) m.fonte ??= textoFonte(m.livro, m.pagina);
 
 const extras = {};
+// Um id que o módulo já traz não é trocado (o Duelo de Dragões 0.21.3 registrava os "ddd-" que agora vêm daqui).
 export function registrarModelos(novos = {}) {
-  for (const [id, m] of Object.entries(novos)) if (m?.nome) extras[id] = m;
+  for (const [id, m] of Object.entries(novos)) if (m?.nome && !PROPRIOS[id]) extras[id] = m;
 }
-export const modelos = () => ({ ...MODELOS_LIVRO, ...MODELOS_SUPLEMENTOS, ...extras });
+const PROPRIOS = { ...MODELOS_LIVRO, ...MODELOS_SUPLEMENTOS, ...MODELOS_CAMPANHA };
+export const modelos = () => ({ ...PROPRIOS, ...extras });
 export const modelo = (id) => modelos()[id] ?? null;
 
 // Lista do formulário agrupada por livro, como as pastas do Giria T20 ("LB - Armadilhas", "AdA - Armadilhas"),

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { REF, validarEfeito, formulaValida } from "./lib/ref.mjs";
 import { criarMundo } from "./lib/mock.mjs";
-import { MODELOS_LIVRO, MODELOS_SUPLEMENTOS, registrarModelos, modelos } from "../scripts/modelos.mjs";
+import { MODELOS_LIVRO, MODELOS_SUPLEMENTOS, MODELOS_CAMPANHA, registrarModelos, modelos } from "../scripts/modelos.mjs";
 import { registrarTipo, configDe, _teste as A } from "../scripts/armadilha.mjs";
 import { _teste as T } from "../scripts/testes.mjs";
 
@@ -267,7 +267,7 @@ test("outros módulos acrescentam modelos (aparecem na lista do formulário)", (
   // grupos na ordem dos livros do Giria (LB, ..., AdA) e, dentro de cada um, por ND
   const ids = Object.keys(escolhas).slice(1);
   const grupos = [...new Set(ids.map((id) => escolhas[id].group))];
-  assert.deepEqual(grupos, ["LB - Armadilhas", "AdA - Armadilhas", "Outros módulos"]);
+  assert.deepEqual(grupos, ["LB - Armadilhas", "AdA - Armadilhas", "DdD - Armadilhas", "Outros módulos"]);
   const ada = ids.filter((id) => escolhas[id].group === "AdA - Armadilhas");
   assert.deepEqual([ada[0], ada.at(-1)], ["andrajos-flamejantes", "sussurro-de-sszzaas"]);
   assert.ok(modelos()["teste-extra"]);
@@ -304,5 +304,42 @@ test("Armadilha de Gaiola: sem teste, o mestre aplica imóvel em quem entrou", a
   assert.equal(M.chat.filter((m) => m.flags?.[MOD]?.pedido).length, 0);
   await mestreAplica(M);
   assert.ok(M.herois[0].statuses.has("imovel"), "imóvel aplicado");
+  assert.deepEqual(M.problemas, []);
+});
+
+test("armadilhas da campanha Duelo de Dragões: válidas no sistema, no grupo DdD, e o Duelo 0.21.3 não as troca", () => {
+  const p = [];
+  for (const [id, m] of Object.entries(MODELOS_CAMPANHA)) {
+    if (!id.startsWith("ddd-")) p.push(`${id}: sem o prefixo ddd-`);
+    if (!m.nome || !m.texto || !/^Duelo de Dragões #\d+$/.test(m.fonte) || m.livro !== "DdD") p.push(`${id}: nome, texto, livro ou fonte`);
+    if (!REF.pericias.includes(m.pericia) || !(m.cd > 0)) p.push(`${id}: teste ${m.pericia} CD ${m.cd}`);
+    if (m.dano) for (const [, t] of m.dano.matchAll(/\[([^\]]+)\]/g)) if (!REF.tiposDano.includes(t)) p.push(`${id}: tipo de dano ${t}`);
+    if (m.dano && !formulaValida(m.dano.replace(/\s+/g, ""))) p.push(`${id}: fórmula ${m.dano}`);
+    if (m.condicao && !REF.condicoes.includes(m.condicao)) p.push(`${id}: condição ${m.condicao}`);
+    if (m.efeito) p.push(...validarEfeito(m.efeito, { tipoAtor: "efeito-direto", onde: `${id}: ` }));
+    if (id in MODELOS_LIVRO || id in MODELOS_SUPLEMENTOS) p.push(`${id}: id repetido`);
+  }
+  assert.deepEqual(p, []);
+  // Valores das notas das revistas.
+  const v = (id) => MODELOS_CAMPANHA[id];
+  assert.deepEqual([v("ddd-fosso-uivantes").cd, v("ddd-bugulentos").cd, v("ddd-fogo-fatuo").cd, v("ddd-sussurro-de-sszzaas").cd, v("ddd-maldicao-do-dragao-rei").cd], [15, 20, 25, 30, 45]);
+  assert.deepEqual([v("ddd-fogo-fatuo").dano, v("ddd-maldicao-do-dragao-rei").dano, v("ddd-queda-da-escada").dano], ["7d6[psiquico]", "10d12[trevas]", "10d6[impacto]"]);
+  mundo();
+  registrarModelos({ "ddd-bugulentos": { nome: "Bugulentos! (versão antiga do Duelo)", pericia: "refl", cd: 20 } });
+  assert.equal(modelos()["ddd-bugulentos"].nome, "Bugulentos!", "o registro do Duelo 0.21.3 não troca o modelo do módulo");
+  const escolhas = CONFIG.RegionBehavior.dataModels["giria-t20-armadilhas.armadilha"].defineSchema().modelo.choices();
+  assert.deepEqual(escolhas["ddd-bugulentos"], { label: "Bugulentos! (ND 1/2) · DdD", group: "DdD - Armadilhas" });
+});
+
+test("Bugulentos! (campanha): quem falha recebe o botão do efeito de dano contínuo", async () => {
+  const M = mundo({ modoDados: "min" });
+  const b = M.regiao({ modelo: "ddd-bugulentos" });
+  await M.entrar(b, M.token("Styx"), M.gm);
+  assert.match(avisos(M)[0].texto, /Duelo de Dragões #3/);
+  await A.disparar(avisos(M)[0]);
+  await jogadoresRolam(M);
+  await mestreAplica(M);
+  assert.deepEqual(M.herois[0].danos, [1]);
+  assert.equal(M.herois[0].efeitos[0].system.changes[0].key, "danoContinuo");
   assert.deepEqual(M.problemas, []);
 });
